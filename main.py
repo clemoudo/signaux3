@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import time
+data_file = 'data/chutes/chute_2.mp4'
 
 Possible_fall = False
 
@@ -58,3 +59,4 @@ while True:
 
 vc.release()
 cv2.destroyAllWindows()
+
