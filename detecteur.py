@@ -7,12 +7,17 @@ import sounddevice as sd
 import soundfile as sf
 
 data, fs = sf.read("son.mp3", dtype="float32")
+real_time = False
+if real_time:
+    cam = 0
+else:
+    cam = ""
 
 donnes = []
 temps = []
 cv2.namedWindow("preview")
 
-vc = cv2.VideoCapture(0)
+vc = cv2.VideoCapture(cam)
 
 person = []
 potential_fall_frames = []
