@@ -8,7 +8,7 @@ Projet : détection de chute. Dans le cadre du cours de signaux3 2025-2026.
 
 #Utilisation
 
-Pour utiliser le projet, vous pouvez soit l'utilisez en temp réel, en placant la caméra de façon à voir le lit et le sol du coté ou la personne pourrait tombée
+Pour utiliser le projet, vous pouvez soit l'utilisez en temp réel, en mettant la variable real_time en True au debut du code puis en placant la caméra de façon à voir le lit et le sol du coté ou la personne pourrait tombée
 
               /|                    /            \ 
              / |                    |  personne   |
@@ -16,4 +16,4 @@ Pour utiliser le projet, vous pouvez soit l'utilisez en temp réel, en placant l
              \ |                  |          BED                  |
               \|                  |                               |
 
-ensuite lancer le programme et en cas de chute un bruit sonore retentiras et un message apparaitra a l'ecran.
+ensuite, lancé le programme et en cas de chute un bruit sonore retentiras et un message apparaitra a l'ecran.
