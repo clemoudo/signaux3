@@ -11,9 +11,10 @@ real_time = True
 if real_time:
     cam = 0
 else:
-    cam = "file.mp4"
+    cam = "testcoco2.mp4"
 
 donnes = []
+donnes_ground = []
 temps = []
 cv2.namedWindow("preview")
 
@@ -41,6 +42,16 @@ prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 counter = 1
 potential_fall = False
+
+#------------constante-------------
+still_time_constant = 60
+motion_treshold = 0.0005
+motion_frame_length = 15
+bed_frame_treshold = 9
+under_bed_frame_treshold = 12
+potential_fall_frames_length = 100
+fall_frame_checking = 40
+#------------------------
 
 
 start_time = time.time()
@@ -81,9 +92,9 @@ while True:
             cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
             xmid = (x_min + x_max) // 2
             ymid = (y_min + y_max) // 2
-        if motion_mask_ratio > 0.0005 and not VP.potential_fall:
+        if motion_mask_ratio > motion_treshold and not VP.potential_fall:
             VP.motion_frames.append(((x_min+x_max+y_min+y_max)/4,[x_min, y_min, x_max, y_max]))
-            if len(VP.motion_frames) > 15:
+            if len(VP.motion_frames) > motion_frame_length:
                 VP.motion_frames.pop(0)
             VP.in_motion = True
         if VP.in_motion:
@@ -95,14 +106,16 @@ while True:
                 VP.still_counter = 0
             else:
                 VP.still_counter += 1
-            if VP.still_counter > 60:
-                VP.in_motion = False
-                VP.still_counter = 0
-                VP.still = True
+            if VP.still_counter > still_time_constant:
                 VP.change_frame(VP.estimate_bed_frame())
-                still_count = 0
-                last_bed_frame = frame[int(VP.box_frame['U']):int(VP.box_frame['D']),int(VP.box_frame['L']):int(VP.box_frame['R'])]
-                last_under_bed_frame = frame[int(VP.box_frame['D']):int(VP.box_frame['D']+(int(VP.box_frame['D']-int(VP.box_frame['U'])))),int(VP.box_frame['L']):int(VP.box_frame['R'])]
+                if abs(int(VP.box_frame['D'])-int(VP.box_frame['U'])) < abs(int(VP.box_frame['R'])-int(VP.box_frame['L']))/1.5:
+                    VP.in_motion = False
+                    still_count = 0
+                    VP.still = True
+                    last_bed_frame = frame[int(VP.box_frame['U']):int(VP.box_frame['D']),int(VP.box_frame['L']):int(VP.box_frame['R'])]
+                    last_under_bed_frame = frame[int(VP.box_frame['D']):int(VP.box_frame['D']+(int(VP.box_frame['D']-int(VP.box_frame['U'])))),int(VP.box_frame['L']):int(VP.box_frame['R'])]
+                VP.estimated_bed_frames.pop(-1)
+                VP.still_counter = 0
         elif VP.still:
             show_box = True
             if still_count % 5 == 0:
@@ -111,10 +124,11 @@ while True:
                 under_bed_frame = frame[int(VP.box_frame['D']):int(VP.box_frame['D']+(int(VP.box_frame['D']-int(VP.box_frame['U'])))),int(VP.box_frame['L']):int(VP.box_frame['R'])]
                 under_bed_frame_ratio = abs(np.mean(under_bed_frame)-np.mean(last_under_bed_frame))
                 donnes.append(bed_frame_ratio)
+                donnes_ground.append(under_bed_frame_ratio)
 
                 t = frame_idx / fps
                 temps.append(t)
-                if bed_frame_ratio > 10 and under_bed_frame_ratio >15:
+                if bed_frame_ratio > bed_frame_treshold and under_bed_frame_ratio >under_bed_frame_treshold:
                     ys, xs = np.where(motion_mask[int(VP.box_frame['U']):int(VP.box_frame['D']),int(VP.box_frame['L']):int(VP.box_frame['R'])] > 0)
                     if len(xs) > 0 and len(ys) > 0:
                         x_min, x_max = xs.min(), xs.max()
@@ -150,8 +164,8 @@ while True:
             potential_fall_frames.append(motion_mask_ratio)
             print(len(potential_fall_frames))
             print(potential_fall_frames)
-            if len(potential_fall_frames) > 100:
-                potential_fall_frames = potential_fall_frames[40:]
+            if len(potential_fall_frames) > potential_fall_frames_length:
+                potential_fall_frames = potential_fall_frames[fall_frame_checking:]
                 mavg = 0
                 for f in potential_fall_frames:
                     mavg += f
@@ -159,10 +173,6 @@ while True:
                 print('mavg ',mavg)
                 if mavg < 0.001:
                     print('chute confirmée')
-                    plt.plot(temps, donnes)
-                    plt.xlabel('Temps (s)')
-                    plt.ylabel('bfm (bed_frame_ratio)')
-                    plt.title('Évolution de bfm en fonction du temps')
                     plt.grid(True)
                     plt.show()
                     VP.still = False
@@ -173,6 +183,7 @@ while True:
                 else:
                     VP.potential_fall = False
                     donnes.append(0)
+                    donnes_ground.append(0)
                     t = frame_idx / fps
                     temps.append(t)
 
@@ -231,6 +242,7 @@ while True:
 
 
 plt.plot(temps, donnes)
+plt.plot(temps,donnes_ground)
 plt.xlabel('Temps (s)')
 plt.ylabel('bfm (bed_frame_ratio)')
 plt.title('Évolution de bfm en fonction du temps')
