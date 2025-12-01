@@ -7,11 +7,11 @@ import sounddevice as sd
 import soundfile as sf
 
 data, fs = sf.read("son.mp3", dtype="float32")
-real_time = False
+real_time = True
 if real_time:
     cam = 0
 else:
-    cam = ""
+    cam = "file.mp4"
 
 donnes = []
 temps = []
@@ -35,7 +35,7 @@ rval, frame = vc.read()
 if not rval:
     exit()
 
-target_w, target_h = 1080,720
+target_w, target_h = 1280,720
 frame = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
 prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -95,7 +95,7 @@ while True:
                 VP.still_counter = 0
             else:
                 VP.still_counter += 1
-            if VP.still_counter > 100:
+            if VP.still_counter > 60:
                 VP.in_motion = False
                 VP.still_counter = 0
                 VP.still = True
