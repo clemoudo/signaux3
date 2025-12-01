@@ -40,7 +40,7 @@ class vieux:
     def check_movement(self,pos):
         x_avg = (pos[0]+self.pos[0])//2
         y_avg = (pos[1]+self.pos[1])//2
-        if abs(pos[0]-x_avg) > 50 or abs(pos[1]-y_avg) > 50:
+        if abs(pos[0]-x_avg) > 25 or abs(pos[1]-y_avg) > 25:
             return True
         else:
             return False
