@@ -37,15 +37,16 @@ if not rval:
     exit()
 
 target_w, target_h = 1280,720
-frame = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+#frame = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
 prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 counter = 1
 potential_fall = False
 
+
 #------------constante-------------
-still_time_constant = 60
-motion_treshold = 0.0005
+still_time_constant = 80
+motion_treshold = 0.00075
 motion_frame_length = 15
 bed_frame_treshold = 9
 under_bed_frame_treshold = 12
@@ -69,14 +70,14 @@ while True:
     if not rval:
         break
 
-    frame = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
+    #frame = cv2.resize(frame, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # --- Détection de mouvement par différence de frames ---
     diff = cv2.absdiff(gray, prev_gray)
-    _, motion_mask = cv2.threshold(diff, 60, 255, cv2.THRESH_BINARY)
+    _, motion_mask = cv2.threshold(diff, 40, 255, cv2.THRESH_BINARY)
 
-    kernel = np.ones((5,5),np.uint8)
+    kernel = np.ones((3,3),np.uint8)
     motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, kernel)
 
     if not VP.still and not VP.potential_fall:
@@ -108,7 +109,7 @@ while True:
                 VP.still_counter += 1
             if VP.still_counter > still_time_constant:
                 VP.change_frame(VP.estimate_bed_frame())
-                if abs(int(VP.box_frame['D'])-int(VP.box_frame['U'])) < abs(int(VP.box_frame['R'])-int(VP.box_frame['L']))/1.5:
+                if abs(int(VP.box_frame['D'])-int(VP.box_frame['U'])) < abs(int(VP.box_frame['R'])-int(VP.box_frame['L']))/1.25:
                     VP.in_motion = False
                     still_count = 0
                     VP.still = True
@@ -200,8 +201,9 @@ while True:
         )
         fall_display_frames -= 1
         if fall_display_frames <= 0 and fall_confirmed:
-            sd.play(data,fs)
             fall_confirmed = False
+        elif fall_display_frames == 3:
+            sd.play(data, fs)
 
     #check_img = frame[check_frame[0][0]:check_frame[0][1],check_frame[1][0]:check_frame[1][1]]
     cv2.circle(frame, VP.pos, 10, (255, 0, 255), -1)
@@ -241,8 +243,8 @@ while True:
 
 
 
-plt.plot(temps, donnes)
-plt.plot(temps,donnes_ground)
+plt.plot(temps, donnes,color='g')
+plt.plot(temps,donnes_ground,color='b')
 plt.xlabel('Temps (s)')
 plt.ylabel('bfm (bed_frame_ratio)')
 plt.title('Évolution de bfm en fonction du temps')
